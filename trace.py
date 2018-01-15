@@ -15,7 +15,7 @@ graph = Graph("http://localhost:7474/db/data/")
 
 dest = '8.8.8.8'
 
-dublin = dublintraceroute.DublinTraceroute(dest, npaths=1)
+dublin = dublintraceroute.DublinTraceroute(dest, npaths=3)
 d = dublin.traceroute()
 pprint.pprint(d)
 
@@ -33,10 +33,12 @@ else:
     tx.merge(z)
     print("Target not found")
 
+tx.commit()
 
 # loop through each flow creating Nodes
 for flow in d['flows'].keys():
     for hop, results in enumerate(d['flows'][flow]):
+        tx = graph.begin()
         print(">"+'\n')
         print(d['flows'][flow][hop]['is_last'])
         if d['flows'][flow][hop]['received'] is not None:
@@ -61,27 +63,29 @@ for flow in d['flows'].keys():
             print(tx.exists(az))
             print(az)
             tx.merge(az)
-
+        tx.commit()
 
 # Build Connections
-        if d['flows'][flow][hop]['received'] is not None:
-            if d['flows'][flow][(hop-1)]['received'] is not None:
-                ip = d['flows'][flow][(hop-1)]['received']['ip']['src']
-                if graph.find_one("Host", "ip", ip) is not None:
-                    b = graph.find_one("Host", "ip", ip)
-                    print("found b")
-                else:
-                    print("build b")
-                    b = Node("Host", ip=ip)
-#
-                print(a)
-                print(b)
-#
-                ba = Relationship(b, "Link", a)
-                print(tx.exists(ba))
-                print(ba)
-                tx.merge(ba)
-tx.commit()
+        tx = graph.begin()
+        if hop > 0:
+            if d['flows'][flow][hop]['received'] is not None:
+                if d['flows'][flow][(hop-1)]['received'] is not None:
+                    ip = d['flows'][flow][(hop-1)]['received']['ip']['src']
+                    if graph.find_one("Host", "ip", ip) is not None:
+                        b = graph.find_one("Host", "ip", ip)
+                        print("found b")
+                    else:
+                        print("build b")
+                        b = Node("Host", ip=ip)
+    #
+                    print(a)
+                    print(b)
+    #
+                    ba = Relationship(b, "Link", a)
+                    print(tx.exists(ba))
+                    print(ba)
+                    tx.merge(ba)
+        tx.commit()
 
 #    print(results['flows'][flow][2])
 #    pprint.pprint(d['flows'][code])

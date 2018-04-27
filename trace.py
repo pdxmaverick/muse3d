@@ -6,7 +6,7 @@ from py2neo.ogm import *
 
 
 # set up authentication parameters
-authenticate("localhost:7474", "neo4j", "P0rsch3")
+authenticate("localhost:7474", "neo4j", "neo4j")
 
 # connect to authenticated graph database
 graph = Graph("http://localhost:7474/db/data/")
